@@ -1,4 +1,412 @@
-/* 
-  Naveen Weather — style.css
-  Phase 2: Full styles will be written here
+/* ================================================================
+   Naveen Weather — style.css
+   Phase 2: Full UI Styles
+   
+   Structure:
+   1. CSS Reset & Root Variables
+   2. Base / Body
+   3. App Wrapper
+   4. Header
+   5. Search Section
+   6. Error Message
+   7. Weather Card
+   8. Responsive Design (Mobile)
+   9. Utility Classes
+================================================================ */
+
+
+/* ── 1. CSS Reset & Root Variables ──────────────────────────────
+   "Root variables" let us define colors/sizes in ONE place.
+   If we want to change the blue color, we change it here,
+   and every element using it updates automatically.
+   This is the same concept as constants in Java.
 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /*
+    box-sizing: border-box → the element's total width includes padding and border.
+    Default CSS behaviour is weird: padding ADDS to width, making layouts break.
+    This line fixes that globally. Every professional project uses this.
+  */
+}
+
+:root {
+  /* Colors */
+  --color-bg-start: #0f0c29;       /* Deep dark purple — gradient start */
+  --color-bg-end: #302b63;         /* Slightly lighter purple — gradient end */
+  --color-card-bg: rgba(255, 255, 255, 0.10); /* Semi-transparent white card */
+  --color-card-border: rgba(255, 255, 255, 0.18);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.70);
+  --color-accent: #f6d365;         /* Warm golden yellow for highlights */
+  --color-error: #ff6b6b;          /* Red for error messages */
+  --color-search-bg: rgba(255, 255, 255, 0.15);
+  --color-search-focus: rgba(255, 255, 255, 0.25);
+
+  /* Typography */
+  --font-family: 'Poppins', sans-serif;
+  --font-size-base: 16px;
+
+  /* Spacing */
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+
+  /* Border Radius */
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 50px;
+
+  /* Shadows */
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --shadow-btn: 0 4px 15px rgba(246, 211, 101, 0.4);
+}
+
+
+/* ── 2. Base / Body ─────────────────────────────────────────────
+   Sets the page background and default font.
+*/
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  /*
+    min-height: 100vh → the body is AT LEAST as tall as the full viewport height.
+    vh = viewport height. 100vh = 100% of the visible screen height.
+    This ensures the background covers the whole screen even on short content pages.
+  */
+  background: linear-gradient(135deg, var(--color-bg-start), var(--color-bg-end));
+  /*
+    linear-gradient(angle, color1, color2)
+    135deg = diagonal from top-left to bottom-right
+    Creates a beautiful deep purple gradient background.
+  */
+  display: flex;
+  justify-content: center;
+  /*
+    flexbox: centers the app-wrapper horizontally on the page.
+    We'll use this pattern a lot — it's the modern way to center things in CSS.
+  */
+  padding: var(--spacing-xl) var(--spacing-md);
+}
+
+
+/* ── 3. App Wrapper ─────────────────────────────────────────────
+   The main container that holds everything.
+   We cap its width so it doesn't stretch too wide on big screens.
+*/
+.app-wrapper {
+  width: 100%;
+  max-width: 480px;
+  /*
+    max-width: 480px → on desktop, the content won't stretch wider than 480px.
+    This keeps it clean and readable. Weather apps are naturally "card-like".
+  */
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  /*
+    gap: spacing between each child element (header, search, card).
+    Much cleaner than adding margin-bottom to every element individually.
+  */
+}
+
+
+/* ── 4. Header ──────────────────────────────────────────────────*/
+.app-header {
+  text-align: center;
+}
+
+.app-title {
+  font-size: 2rem;        /* 2 × 16px = 32px */
+  font-weight: 700;       /* Bold */
+  letter-spacing: 1px;
+}
+
+.app-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-sm);
+}
+
+
+/* ── 5. Search Section ──────────────────────────────────────────*/
+.search-section {
+  width: 100%;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--color-search-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-pill);
+  padding: var(--spacing-sm) var(--spacing-md);
+  /*
+    The search bar is a flex container.
+    The input takes all available space, the button stays its natural size.
+  */
+  backdrop-filter: blur(10px);
+  /*
+    backdrop-filter: blur → creates the "frosted glass" effect.
+    The content BEHIND the element appears blurred.
+    This is a popular modern UI trend.
+  */
+  transition: background 0.3s ease;
+}
+
+.search-bar:focus-within {
+  background: var(--color-search-focus);
+  /*
+    :focus-within triggers when ANY child element (the input) is focused.
+    This highlights the whole search bar when the user clicks into it.
+  */
+}
+
+.search-input {
+  flex: 1;
+  /*
+    flex: 1 → "take up all remaining space."
+    The button has a fixed size; the input fills everything else.
+  */
+  background: none;         /* No background — inherits from .search-bar */
+  border: none;             /* No border — the container has the border */
+  outline: none;            /* Remove the default browser blue outline */
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: 1rem;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.search-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 4px;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  line-height: 1;
+}
+
+.search-btn:hover {
+  transform: scale(1.2);
+  /* Subtle scale-up on hover — gives a responsive feel */
+}
+
+.search-btn:active {
+  transform: scale(0.95);
+  /* Slight press-down effect when clicked */
+}
+
+
+/* ── 6. Error Message ───────────────────────────────────────────*/
+.error-message {
+  text-align: center;
+  color: var(--color-error);
+  font-size: 0.9rem;
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+
+/* ── 7. Weather Card ────────────────────────────────────────────
+   The main card that displays weather information.
+   Uses the "glassmorphism" design trend — frosted glass effect.
+*/
+.weather-card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  /*
+    -webkit-backdrop-filter → Safari browser requires this vendor prefix.
+    Without it, the blur effect won't work on iPhones and Macs.
+    Always add both when using backdrop-filter.
+  */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  text-align: center;
+  animation: fadeInUp 0.5s ease;
+  /*
+    We'll define this animation below.
+    It makes the card slide up gently when it appears.
+  */
+}
+
+/* Location row: city name + country badge */
+.weather-location {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.city-name {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.country-name {
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* Icon + Temperature block */
+.weather-main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.weather-icon {
+  width: 90px;
+  height: 90px;
+  /* 
+    Explicit width/height prevents layout shift (CLS).
+    The browser reserves space for the image before it loads.
+    This is a Core Web Vitals best practice — Google measures this.
+  */
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+  /* drop-shadow on the icon itself, not the square box around it */
+}
+
+.temperature-block {
+  text-align: left;
+}
+
+.temperature {
+  font-size: 3.5rem;    /* Large, bold temperature — the star of the show */
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.weather-description {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  text-transform: capitalize;
+  margin-top: 4px;
+}
+
+/* Details row: Humidity, Wind, Feels Like */
+.weather-details {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-card-border);
+  /*
+    border-top acts as a visual divider between
+    the main weather info and the detail stats below it.
+  */
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  /*
+    flex: 1 on each item means they share the available space equally.
+    Even if one label is longer, they all get the same width.
+  */
+}
+
+.detail-icon {
+  font-size: 1.4rem;
+}
+
+.detail-label {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+
+/* ── 8. Responsive Design ───────────────────────────────────────
+   Media queries adjust the layout for smaller screens.
+   This is what makes a site "responsive" / mobile-friendly.
+   
+   Think of it as: "IF screen width is ≤ 400px, THEN apply these rules"
+*/
+@media (max-width: 400px) {
+
+  .app-title {
+    font-size: 1.6rem;
+  }
+
+  .temperature {
+    font-size: 2.8rem;
+  }
+
+  .weather-details {
+    flex-direction: column;
+    /*
+      On very small screens, stack the detail items vertically
+      instead of side by side — prevents cramping.
+    */
+    gap: var(--spacing-md);
+  }
+
+  .weather-card {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+}
+
+
+/* ── 9. Utility Classes ─────────────────────────────────────────
+   Small reusable classes that do one specific thing.
+   The "hidden" class is toggled by JavaScript to show/hide elements.
+*/
+.hidden {
+  display: none !important;
+  /*
+    !important ensures this always wins over other display rules.
+    JS will add/remove this class to show and hide elements.
+  */
+}
+
+
+/* ── Animations ─────────────────────────────────────────────────
+   keyframes define what an animation does step by step.
+   "from" = starting state, "to" = ending state.
+*/
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    /* Start: invisible and 20px below final position */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    /* End: fully visible at normal position */
+  }
+}

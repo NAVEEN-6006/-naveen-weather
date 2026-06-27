@@ -1,12 +1,176 @@
 <!DOCTYPE html>
+<!--
+  DOCTYPE tells the browser: "This is a modern HTML5 page."
+  Without this, browsers go into "quirks mode" and render things incorrectly.
+-->
+
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Naveen Weather</title>
-  </head>
-  <body>
-    <h1>Naveen Weather — Coming Soon</h1>
-    <!-- Phase 2: Full UI will be built here -->
-  </body>
+<!--
+  lang="en" tells search engines and screen readers this page is in English.
+  Important for SEO and accessibility.
+-->
+
+<head>
+  <!-- ── Meta Tags ─────────────────────────────────────────────── -->
+
+  <meta charset="UTF-8" />
+  <!-- UTF-8 supports all characters worldwide (emojis, Hindi, Arabic, etc.) -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!--
+    This is the KEY line for mobile responsiveness.
+    "width=device-width" → use the actual screen width, not a fake 980px desktop width
+    "initial-scale=1.0"  → don't zoom in or out on load
+    Without this, your site would look tiny on a phone.
+  -->
+
+  <meta name="description" content="Naveen Weather — Search real-time weather for any city in the world." />
+  <!-- This description appears in Google search results under the page title. Good for SEO. -->
+
+  <title>Naveen Weather</title>
+  <!-- Shown in browser tab and in Google search results -->
+
+  <!-- ── Google Font ────────────────────────────────────────────── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!--
+    We're using the "Poppins" font — modern, clean, used by many pro websites.
+    preconnect hints to the browser: "start connecting to Google Fonts early"
+    This improves page load speed.
+  -->
+
+  <!-- ── Our Stylesheet ─────────────────────────────────────────── -->
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Links our CSS file. Path is relative to index.html location. -->
+
+</head>
+
+<body>
+
+  <!-- ── Page Wrapper ───────────────────────────────────────────── -->
+  <!-- Everything lives inside this div so we can center the whole page -->
+  <div class="app-wrapper">
+
+    <!-- ── Header ─────────────────────────────────────────────────── -->
+    <header class="app-header">
+      <h1 class="app-title">🌤️ Naveen Weather</h1>
+      <p class="app-subtitle">Real-time weather for any city in the world</p>
+    </header>
+
+    <!-- ── Search Section ─────────────────────────────────────────── -->
+    <section class="search-section">
+      <div class="search-bar">
+
+        <input
+          type="text"
+          id="cityInput"
+          class="search-input"
+          placeholder="Search for a city..."
+          autocomplete="off"
+        />
+        <!--
+          id="cityInput"   → JavaScript will grab this element by this ID
+          autocomplete="off" → Prevents the browser from showing old suggestions
+                               which can look messy on a weather app
+        -->
+
+        <button id="searchBtn" class="search-btn" aria-label="Search weather">
+          🔍
+        </button>
+        <!--
+          aria-label → For screen readers (accessibility). If someone uses
+          a screen reader, it will say "Search weather" instead of just "emoji"
+        -->
+
+      </div>
+    </section>
+
+    <!-- ── Error Message ──────────────────────────────────────────── -->
+    <!-- Hidden by default. JavaScript will show it when city is not found. -->
+    <p id="errorMessage" class="error-message hidden">
+      ⚠️ City not found. Please check the name and try again.
+    </p>
+
+    <!-- ── Weather Card ───────────────────────────────────────────── -->
+    <!--
+      This card is VISIBLE now with placeholder/demo data.
+      In Phase 3, JavaScript will populate this with real API data.
+      The "hidden" class will be removed by JS once data loads.
+    -->
+    <section id="weatherCard" class="weather-card">
+
+      <!-- City name and country -->
+      <div class="weather-location">
+        <h2 id="cityName" class="city-name">London</h2>
+        <span id="countryName" class="country-name">GB</span>
+      </div>
+
+      <!-- Weather icon and temperature — the hero of the card -->
+      <div class="weather-main">
+        <img
+          id="weatherIcon"
+          class="weather-icon"
+          src="https://openweathermap.org/img/wn/04d@2x.png"
+          alt="Cloudy weather icon"
+        />
+        <!--
+          We're using OpenWeatherMap's icon URL as a placeholder.
+          In Phase 3, this src will be set dynamically by JavaScript.
+          alt text is important for accessibility and SEO.
+        -->
+
+        <div class="temperature-block">
+          <p id="temperature" class="temperature">18°C</p>
+          <p id="weatherDescription" class="weather-description">Cloudy</p>
+        </div>
+      </div>
+
+      <!-- Extra weather details row -->
+      <div class="weather-details">
+
+        <div class="detail-item">
+          <span class="detail-icon">💧</span>
+          <div>
+            <p class="detail-label">Humidity</p>
+            <p id="humidity" class="detail-value">72%</p>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-icon">💨</span>
+          <div>
+            <p class="detail-label">Wind Speed</p>
+            <p id="windSpeed" class="detail-value">14 km/h</p>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-icon">🌡️</span>
+          <div>
+            <p class="detail-label">Feels Like</p>
+            <p id="feelsLike" class="detail-value">15°C</p>
+          </div>
+        </div>
+
+      </div>
+      <!-- end .weather-details -->
+
+    </section>
+    <!-- end .weather-card -->
+
+  </div>
+  <!-- end .app-wrapper -->
+
+  <!-- ── JavaScript ─────────────────────────────────────────────── -->
+  <script src="js/app.js"></script>
+  <!--
+    Script tag goes at the BOTTOM of body — not in <head>.
+    Why? Because the browser reads HTML top to bottom.
+    If script is in <head>, JS runs before the HTML elements exist,
+    and document.getElementById("cityInput") would return null.
+    Placing it at the bottom ensures all HTML is loaded first.
+  -->
+
+</body>
 </html>
