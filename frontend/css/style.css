@@ -1,52 +1,45 @@
 /* ================================================================
    Naveen Weather — style.css
-   Phase 2: Full UI Styles
-   
+   Phase 4: Loading Animation + Dynamic Themes + UI Polish
+
    Structure:
-   1. CSS Reset & Root Variables
-   2. Base / Body
-   3. App Wrapper
-   4. Header
-   5. Search Section
-   6. Error Message
-   7. Weather Card
-   8. Responsive Design (Mobile)
-   9. Utility Classes
+   1.  CSS Reset & Root Variables
+   2.  Base / Body
+   3.  App Wrapper
+   4.  Header
+   5.  Search Section
+   6.  Error Message
+   7.  Weather Card
+   8.  Loading Spinner
+   9.  Dynamic Weather Themes (body classes toggled by JS)
+   10. Responsive Design (Mobile)
+   11. Utility Classes
+   12. Animations & Keyframes
 ================================================================ */
 
 
-/* ── 1. CSS Reset & Root Variables ──────────────────────────────
-   "Root variables" let us define colors/sizes in ONE place.
-   If we want to change the blue color, we change it here,
-   and every element using it updates automatically.
-   This is the same concept as constants in Java.
-*/
+/* ── 1. CSS Reset & Root Variables ──────────────────────────────*/
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  /*
-    box-sizing: border-box → the element's total width includes padding and border.
-    Default CSS behaviour is weird: padding ADDS to width, making layouts break.
-    This line fixes that globally. Every professional project uses this.
-  */
 }
 
 :root {
-  /* Colors */
-  --color-bg-start: #0f0c29;       /* Deep dark purple — gradient start */
-  --color-bg-end: #302b63;         /* Slightly lighter purple — gradient end */
-  --color-card-bg: rgba(255, 255, 255, 0.10); /* Semi-transparent white card */
-  --color-card-border: rgba(255, 255, 255, 0.18);
-  --color-text-primary: #ffffff;
+  /* Default colors (overridden by weather theme classes) */
+  --color-bg-start: #0f0c29;
+  --color-bg-end:   #302b63;
+  --color-card-bg:        rgba(255, 255, 255, 0.10);
+  --color-card-border:    rgba(255, 255, 255, 0.18);
+  --color-text-primary:   #ffffff;
   --color-text-secondary: rgba(255, 255, 255, 0.70);
-  --color-accent: #f6d365;         /* Warm golden yellow for highlights */
-  --color-error: #ff6b6b;          /* Red for error messages */
-  --color-search-bg: rgba(255, 255, 255, 0.15);
-  --color-search-focus: rgba(255, 255, 255, 0.25);
+  --color-accent:         #f6d365;
+  --color-error:          #ff6b6b;
+  --color-search-bg:      rgba(255, 255, 255, 0.15);
+  --color-search-focus:   rgba(255, 255, 255, 0.25);
 
   /* Typography */
-  --font-family: 'Poppins', sans-serif;
+  --font-family:    'Poppins', sans-serif;
   --font-size-base: 16px;
 
   /* Spacing */
@@ -56,63 +49,100 @@
   --spacing-xl: 40px;
 
   /* Border Radius */
-  --radius-md: 12px;
-  --radius-lg: 20px;
+  --radius-md:   12px;
+  --radius-lg:   20px;
   --radius-pill: 50px;
 
   /* Shadows */
   --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.37);
-  --shadow-btn: 0 4px 15px rgba(246, 211, 101, 0.4);
 }
 
 
-/* ── 2. Base / Body ─────────────────────────────────────────────
-   Sets the page background and default font.
-*/
+/* ── 2. Base / Body ─────────────────────────────────────────────*/
 body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
   min-height: 100vh;
-  /*
-    min-height: 100vh → the body is AT LEAST as tall as the full viewport height.
-    vh = viewport height. 100vh = 100% of the visible screen height.
-    This ensures the background covers the whole screen even on short content pages.
-  */
   background: linear-gradient(135deg, var(--color-bg-start), var(--color-bg-end));
-  /*
-    linear-gradient(angle, color1, color2)
-    135deg = diagonal from top-left to bottom-right
-    Creates a beautiful deep purple gradient background.
-  */
   display: flex;
   justify-content: center;
-  /*
-    flexbox: centers the app-wrapper horizontally on the page.
-    We'll use this pattern a lot — it's the modern way to center things in CSS.
-  */
   padding: var(--spacing-xl) var(--spacing-md);
+  /*
+    transition on background lets the gradient smoothly
+    animate when JavaScript swaps the theme class.
+  */
+  transition: background 0.8s ease;
 }
 
 
-/* ── 3. App Wrapper ─────────────────────────────────────────────
-   The main container that holds everything.
-   We cap its width so it doesn't stretch too wide on big screens.
+/* ── 9. Dynamic Weather Themes ──────────────────────────────────
+   JavaScript adds one of these classes to <body> after fetching weather.
+   Each class overrides the CSS variables defined in :root.
+   
+   Condition groups (matched to OpenWeatherMap condition codes):
+   - theme-sunny    → clear sky
+   - theme-cloudy   → clouds, mist, haze, fog
+   - theme-rainy    → rain, drizzle
+   - theme-stormy   → thunderstorm
+   - theme-snowy    → snow
+   - theme-night    → any condition at night (icon ends with 'n')
 */
+
+body.theme-sunny {
+  --color-bg-start: #f7971e;
+  --color-bg-end:   #ffd200;
+  --color-text-primary:   #1a1a2e;
+  --color-text-secondary: rgba(26, 26, 46, 0.65);
+  --color-card-bg:     rgba(255, 255, 255, 0.25);
+  --color-card-border: rgba(255, 255, 255, 0.40);
+  --color-accent:      #c0392b;
+  --color-search-bg:   rgba(255, 255, 255, 0.30);
+}
+
+body.theme-cloudy {
+  --color-bg-start: #485563;
+  --color-bg-end:   #29323c;
+  --color-accent: #b2bec3;
+}
+
+body.theme-rainy {
+  --color-bg-start: #1c3f6e;
+  --color-bg-end:   #0d1f3c;
+  --color-accent: #74b9ff;
+}
+
+body.theme-stormy {
+  --color-bg-start: #141e30;
+  --color-bg-end:   #243b55;
+  --color-accent: #a29bfe;
+}
+
+body.theme-snowy {
+  --color-bg-start: #e0eafc;
+  --color-bg-end:   #cfdef3;
+  --color-text-primary:   #2d3436;
+  --color-text-secondary: rgba(45, 52, 54, 0.65);
+  --color-card-bg:     rgba(255, 255, 255, 0.35);
+  --color-card-border: rgba(255, 255, 255, 0.55);
+  --color-accent:      #0984e3;
+  --color-search-bg:   rgba(255, 255, 255, 0.40);
+}
+
+body.theme-night {
+  --color-bg-start: #0f2027;
+  --color-bg-end:   #203a43;
+  --color-accent: #dfe6e9;
+}
+
+
+/* ── 3. App Wrapper ─────────────────────────────────────────────*/
 .app-wrapper {
   width: 100%;
   max-width: 480px;
-  /*
-    max-width: 480px → on desktop, the content won't stretch wider than 480px.
-    This keeps it clean and readable. Weather apps are naturally "card-like".
-  */
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  /*
-    gap: spacing between each child element (header, search, card).
-    Much cleaner than adding margin-bottom to every element individually.
-  */
 }
 
 
@@ -122,8 +152,8 @@ body {
 }
 
 .app-title {
-  font-size: 2rem;        /* 2 × 16px = 32px */
-  font-weight: 700;       /* Bold */
+  font-size: 2rem;
+  font-weight: 700;
   letter-spacing: 1px;
 }
 
@@ -147,36 +177,20 @@ body {
   border: 1px solid var(--color-card-border);
   border-radius: var(--radius-pill);
   padding: var(--spacing-sm) var(--spacing-md);
-  /*
-    The search bar is a flex container.
-    The input takes all available space, the button stays its natural size.
-  */
   backdrop-filter: blur(10px);
-  /*
-    backdrop-filter: blur → creates the "frosted glass" effect.
-    The content BEHIND the element appears blurred.
-    This is a popular modern UI trend.
-  */
+  -webkit-backdrop-filter: blur(10px);
   transition: background 0.3s ease;
 }
 
 .search-bar:focus-within {
   background: var(--color-search-focus);
-  /*
-    :focus-within triggers when ANY child element (the input) is focused.
-    This highlights the whole search bar when the user clicks into it.
-  */
 }
 
 .search-input {
   flex: 1;
-  /*
-    flex: 1 → "take up all remaining space."
-    The button has a fixed size; the input fills everything else.
-  */
-  background: none;         /* No background — inherits from .search-bar */
-  border: none;             /* No border — the container has the border */
-  outline: none;            /* Remove the default browser blue outline */
+  background: none;
+  border: none;
+  outline: none;
   color: var(--color-text-primary);
   font-family: var(--font-family);
   font-size: 1rem;
@@ -197,14 +211,14 @@ body {
   line-height: 1;
 }
 
-.search-btn:hover {
-  transform: scale(1.2);
-  /* Subtle scale-up on hover — gives a responsive feel */
-}
+.search-btn:hover  { transform: scale(1.2); }
+.search-btn:active { transform: scale(0.95); }
 
-.search-btn:active {
-  transform: scale(0.95);
-  /* Slight press-down effect when clicked */
+/* Disabled state while loading — prevents double-clicks */
+.search-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 
@@ -217,13 +231,11 @@ body {
   border: 1px solid rgba(255, 107, 107, 0.3);
   border-radius: var(--radius-md);
   padding: var(--spacing-sm) var(--spacing-md);
+  animation: fadeInUp 0.3s ease;
 }
 
 
-/* ── 7. Weather Card ────────────────────────────────────────────
-   The main card that displays weather information.
-   Uses the "glassmorphism" design trend — frosted glass effect.
-*/
+/* ── 7. Weather Card ────────────────────────────────────────────*/
 .weather-card {
   background: var(--color-card-bg);
   border: 1px solid var(--color-card-border);
@@ -232,24 +244,17 @@ body {
   box-shadow: var(--shadow-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  /*
-    -webkit-backdrop-filter → Safari browser requires this vendor prefix.
-    Without it, the blur effect won't work on iPhones and Macs.
-    Always add both when using backdrop-filter.
-  */
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-lg);
   text-align: center;
   animation: fadeInUp 0.5s ease;
-  /*
-    We'll define this animation below.
-    It makes the card slide up gently when it appears.
-  */
+  transition: background 0.8s ease, border-color 0.8s ease;
+  /* Smooth transition when theme changes update card background */
 }
 
-/* Location row: city name + country badge */
+/* Location */
 .weather-location {
   display: flex;
   align-items: center;
@@ -270,7 +275,7 @@ body {
   letter-spacing: 1px;
 }
 
-/* Icon + Temperature block */
+/* Icon + Temp */
 .weather-main {
   display: flex;
   align-items: center;
@@ -280,13 +285,9 @@ body {
 .weather-icon {
   width: 90px;
   height: 90px;
-  /* 
-    Explicit width/height prevents layout shift (CLS).
-    The browser reserves space for the image before it loads.
-    This is a Core Web Vitals best practice — Google measures this.
-  */
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-  /* drop-shadow on the icon itself, not the square box around it */
+  /* Animate icon when new weather data loads */
+  animation: iconPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .temperature-block {
@@ -294,10 +295,11 @@ body {
 }
 
 .temperature {
-  font-size: 3.5rem;    /* Large, bold temperature — the star of the show */
+  font-size: 3.5rem;
   font-weight: 700;
   line-height: 1;
   color: var(--color-accent);
+  transition: color 0.8s ease;
 }
 
 .weather-description {
@@ -307,7 +309,7 @@ body {
   margin-top: 4px;
 }
 
-/* Details row: Humidity, Wind, Feels Like */
+/* Details row */
 .weather-details {
   display: flex;
   justify-content: space-around;
@@ -315,10 +317,6 @@ body {
   gap: var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-card-border);
-  /*
-    border-top acts as a visual divider between
-    the main weather info and the detail stats below it.
-  */
 }
 
 .detail-item {
@@ -326,10 +324,6 @@ body {
   align-items: center;
   gap: var(--spacing-sm);
   flex: 1;
-  /*
-    flex: 1 on each item means they share the available space equally.
-    Even if one label is longer, they all get the same width.
-  */
 }
 
 .detail-icon {
@@ -350,14 +344,54 @@ body {
 }
 
 
-/* ── 8. Responsive Design ───────────────────────────────────────
-   Media queries adjust the layout for smaller screens.
-   This is what makes a site "responsive" / mobile-friendly.
-   
-   Think of it as: "IF screen width is ≤ 400px, THEN apply these rules"
+/* ── 8. Loading Spinner ─────────────────────────────────────────
+   Shown inside the weather card while the API request is in flight.
+   Hidden by default; JavaScript adds/removes the "hidden" class.
 */
-@media (max-width: 400px) {
+.loading-spinner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) 0;
+}
 
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--color-accent);
+  /*
+    The trick: make all border sides transparent EXCEPT the top.
+    When the element rotates (see animation below), the colored
+    top border creates the spinning arc effect.
+  */
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  /*
+    infinite → keep spinning until we hide it
+    linear   → constant speed (ease would look jittery for a spinner)
+  */
+}
+
+.loading-text {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+}
+
+/* The weather data content inside the card */
+.weather-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  width: 100%;
+}
+
+
+/* ── 10. Responsive Design ──────────────────────────────────────*/
+@media (max-width: 400px) {
   .app-title {
     font-size: 1.6rem;
   }
@@ -368,10 +402,6 @@ body {
 
   .weather-details {
     flex-direction: column;
-    /*
-      On very small screens, stack the detail items vertically
-      instead of side by side — prevents cramping.
-    */
     gap: var(--spacing-md);
   }
 
@@ -381,32 +411,46 @@ body {
 }
 
 
-/* ── 9. Utility Classes ─────────────────────────────────────────
-   Small reusable classes that do one specific thing.
-   The "hidden" class is toggled by JavaScript to show/hide elements.
-*/
+/* ── 11. Utility Classes ────────────────────────────────────────*/
 .hidden {
   display: none !important;
-  /*
-    !important ensures this always wins over other display rules.
-    JS will add/remove this class to show and hide elements.
-  */
 }
 
 
-/* ── Animations ─────────────────────────────────────────────────
-   keyframes define what an animation does step by step.
-   "from" = starting state, "to" = ending state.
-*/
+/* ── 12. Animations & Keyframes ─────────────────────────────────*/
 @keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(20px);
-    /* Start: invisible and 20px below final position */
   }
   to {
     opacity: 1;
     transform: translateY(0);
-    /* End: fully visible at normal position */
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+    /*
+      rotate(360deg) = one full rotation.
+      Since animation is "infinite", it keeps going.
+    */
+  }
+}
+
+@keyframes iconPop {
+  /*
+    cubic-bezier on the animation-timing-function creates
+    an "overshoot" bounce effect when the icon appears.
+    This is defined on .weather-icon above.
+  */
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
 }

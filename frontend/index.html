@@ -94,67 +94,74 @@
 
     <!-- ── Weather Card ───────────────────────────────────────────── -->
     <!--
-      This card is VISIBLE now with placeholder/demo data.
-      In Phase 3, JavaScript will populate this with real API data.
-      The "hidden" class will be removed by JS once data loads.
+      Hidden on page load. JavaScript removes "hidden" class after:
+      a) fetching weather data (shows weather content), or
+      b) while fetching (shows the loading spinner).
     -->
-    <section id="weatherCard" class="weather-card">
+    <section id="weatherCard" class="weather-card hidden">
 
-      <!-- City name and country -->
-      <div class="weather-location">
-        <h2 id="cityName" class="city-name">London</h2>
-        <span id="countryName" class="country-name">GB</span>
+      <!-- Loading Spinner — visible while API request is in flight -->
+      <div id="loadingSpinner" class="loading-spinner-wrapper hidden">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Fetching weather data...</p>
       </div>
 
-      <!-- Weather icon and temperature — the hero of the card -->
-      <div class="weather-main">
-        <img
-          id="weatherIcon"
-          class="weather-icon"
-          src="https://openweathermap.org/img/wn/04d@2x.png"
-          alt="Cloudy weather icon"
-        />
-        <!--
-          We're using OpenWeatherMap's icon URL as a placeholder.
-          In Phase 3, this src will be set dynamically by JavaScript.
-          alt text is important for accessibility and SEO.
-        -->
+      <!-- Actual Weather Content — hidden while loading, shown after data arrives -->
+      <div id="weatherContent" class="weather-content hidden">
 
-        <div class="temperature-block">
-          <p id="temperature" class="temperature">18°C</p>
-          <p id="weatherDescription" class="weather-description">Cloudy</p>
+        <!-- City name and country -->
+        <div class="weather-location">
+          <h2 id="cityName" class="city-name">--</h2>
+          <span id="countryName" class="country-name">--</span>
         </div>
-      </div>
 
-      <!-- Extra weather details row -->
-      <div class="weather-details">
+        <!-- Weather icon and temperature — the hero of the card -->
+        <div class="weather-main">
+          <img
+            id="weatherIcon"
+            class="weather-icon"
+            src=""
+            alt="Weather icon"
+          />
 
-        <div class="detail-item">
-          <span class="detail-icon">💧</span>
-          <div>
-            <p class="detail-label">Humidity</p>
-            <p id="humidity" class="detail-value">72%</p>
+          <div class="temperature-block">
+            <p id="temperature" class="temperature">--°C</p>
+            <p id="weatherDescription" class="weather-description">--</p>
           </div>
         </div>
 
-        <div class="detail-item">
-          <span class="detail-icon">💨</span>
-          <div>
-            <p class="detail-label">Wind Speed</p>
-            <p id="windSpeed" class="detail-value">14 km/h</p>
-          </div>
-        </div>
+        <!-- Extra weather details row -->
+        <div class="weather-details">
 
-        <div class="detail-item">
-          <span class="detail-icon">🌡️</span>
-          <div>
-            <p class="detail-label">Feels Like</p>
-            <p id="feelsLike" class="detail-value">15°C</p>
+          <div class="detail-item">
+            <span class="detail-icon">💧</span>
+            <div>
+              <p class="detail-label">Humidity</p>
+              <p id="humidity" class="detail-value">--%</p>
+            </div>
           </div>
+
+          <div class="detail-item">
+            <span class="detail-icon">💨</span>
+            <div>
+              <p class="detail-label">Wind Speed</p>
+              <p id="windSpeed" class="detail-value">-- km/h</p>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-icon">🌡️</span>
+            <div>
+              <p class="detail-label">Feels Like</p>
+              <p id="feelsLike" class="detail-value">--°C</p>
+            </div>
+          </div>
+
         </div>
+        <!-- end .weather-details -->
 
       </div>
-      <!-- end .weather-details -->
+      <!-- end #weatherContent -->
 
     </section>
     <!-- end .weather-card -->
