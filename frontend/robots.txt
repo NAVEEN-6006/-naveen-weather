@@ -1,0 +1,13 @@
+# robots.txt — Instructions for web crawlers (like Google's Googlebot)
+#
+# "User-agent: *"  → applies to ALL crawlers
+# "Allow: /"       → allow crawling everything
+# "Sitemap:"       → tells crawlers where to find our sitemap
+#
+# Without robots.txt, some crawlers might not find your sitemap.
+# Without Disallow rules, everything is crawlable by default.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://naveen-weather.vercel.app/sitemap.xml

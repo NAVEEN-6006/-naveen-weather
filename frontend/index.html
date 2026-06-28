@@ -24,8 +24,37 @@
     Without this, your site would look tiny on a phone.
   -->
 
-  <meta name="description" content="Naveen Weather — Search real-time weather for any city in the world." />
-  <!-- This description appears in Google search results under the page title. Good for SEO. -->
+  <meta name="description" content="Naveen Weather — Search real-time weather for any city in the world. Get temperature, humidity, wind speed and more." />
+  <!-- This description appears in Google search results. Keep it under 160 characters. -->
+
+  <!-- ── SEO: Open Graph Tags ──────────────────────────────────────
+    Open Graph tags control how your page looks when shared on
+    WhatsApp, Twitter, LinkedIn, Facebook, etc.
+    Without these, shared links show blank previews.
+  -->
+  <meta property="og:title"       content="Naveen Weather" />
+  <meta property="og:description" content="Real-time weather for any city in the world." />
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://naveen-weather.vercel.app" />
+  <!-- og:image → the thumbnail shown in link previews (add an image later) -->
+
+  <!-- ── SEO: Twitter Card ────────────────────────────────────────-->
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Naveen Weather" />
+  <meta name="twitter:description" content="Real-time weather for any city in the world." />
+
+  <!-- ── SEO: Canonical URL ───────────────────────────────────────
+    Tells Google: "THIS is the official URL of this page."
+    Prevents duplicate content penalties if the site is accessible
+    from multiple URLs (e.g., with/without www).
+  -->
+  <link rel="canonical" href="https://naveen-weather.vercel.app" />
+
+  <!-- ── Favicon ──────────────────────────────────────────────────
+    The small icon shown in the browser tab.
+    Using an emoji as a data URI — no image file needed.
+  -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>" />
 
   <title>Naveen Weather</title>
   <!-- Shown in browser tab and in Google search results -->
