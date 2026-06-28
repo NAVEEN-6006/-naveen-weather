@@ -1,264 +1,559 @@
-/*
-  Naveen Weather — app.js
-  Phase 4: Loading Spinner + Dynamic Weather Themes + UI Polish
+/**
+ * Naveen Weather — app.js  (Production Upgrade)
+ *
+ * Features:
+ *  - Live weather via OpenWeatherMap API
+ *  - °C / °F unit toggle
+ *  - Current location (Geolocation API)
+ *  - Recent search history (localStorage)
+ *  - Favourite cities (localStorage)
+ *  - Dynamic weather themes
+ *  - Skeleton loader + fade animations
+ *  - Full error handling (network, 404, 401, timeout, rate limit)
+ *  - Sunrise / Sunset, Visibility, Pressure, Wind Direction
+ *  - Accessible ARIA live regions
+ */
 
-  What's new in Phase 4:
-  - showLoading() now shows a real CSS spinner inside the card
-  - After data loads, spinner is hidden and content is revealed
-  - applyWeatherTheme() reads the weather condition and swaps a CSS class
-    on <body> to change the entire page gradient dynamically
-*/
+'use strict';
 
-
-// ── API Configuration ─────────────────────────────────────────────
-const API_KEY  = '6691a3d4db95cbea6b52ac849127da42';
-const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather';
-const UNITS    = 'metric';
-
-
-// ── DOM Element References ────────────────────────────────────────
-const cityInput        = document.getElementById('cityInput');
-const searchBtn        = document.getElementById('searchBtn');
-const weatherCard      = document.getElementById('weatherCard');
-const errorMessage     = document.getElementById('errorMessage');
-const loadingSpinner   = document.getElementById('loadingSpinner');
-const weatherContent   = document.getElementById('weatherContent');
-
-// Weather data display elements
-const cityNameEl       = document.getElementById('cityName');
-const countryNameEl    = document.getElementById('countryName');
-const temperatureEl    = document.getElementById('temperature');
-const descriptionEl    = document.getElementById('weatherDescription');
-const humidityEl       = document.getElementById('humidity');
-const windSpeedEl      = document.getElementById('windSpeed');
-const feelsLikeEl      = document.getElementById('feelsLike');
-const weatherIconEl    = document.getElementById('weatherIcon');
-
-
-// ── Theme Map ─────────────────────────────────────────────────────
-/*
-  OpenWeatherMap returns a numeric "id" for weather conditions.
-  Reference: https://openweathermap.org/weather-conditions
-  
-  We map ranges of condition IDs to our CSS theme class names.
-  
-  ID ranges:
-  2xx → Thunderstorm
-  3xx → Drizzle
-  5xx → Rain
-  6xx → Snow
-  7xx → Atmosphere (mist, fog, haze, smoke)
-  800 → Clear sky
-  80x → Clouds
-*/
-const WEATHER_THEMES = {
-  thunderstorm: 'theme-stormy',  // 200–232
-  drizzle:      'theme-rainy',   // 300–321
-  rain:         'theme-rainy',   // 500–531
-  snow:         'theme-snowy',   // 600–622
-  atmosphere:   'theme-cloudy',  // 700–781 (mist, haze, fog, smoke)
-  clear:        'theme-sunny',   // 800
-  clouds:       'theme-cloudy',  // 801–804
-  night:        'theme-night',   // any condition at night (icon ends in 'n')
+/* ── Configuration ──────────────────────────────────────────────── */
+const CONFIG = {
+  // NOTE: For Phase 6 (Spring Boot backend), this key moves server-side.
+  // A backend proxy endpoint will replace this direct API call.
+  API_KEY:  '6691a3d4db95cbea6b52ac849127da42',
+  BASE_URL: 'https://api.openweathermap.org/data/2.5/weather',
+  TIMEOUT_MS: 8000,        // Abort fetch after 8 seconds
+  MAX_RECENT:  5,           // Max recent searches to store
+  MAX_FAVS:    8,           // Max favourite cities
+  STORAGE_KEYS: {
+    RECENT:    'nw_recent',
+    FAVS:      'nw_favs',
+    UNIT:      'nw_unit',
+  },
 };
 
-// All theme class names — used to remove the previous theme before adding new one
-const ALL_THEME_CLASSES = Object.values(WEATHER_THEMES);
+/* ── State ──────────────────────────────────────────────────────── */
+const state = {
+  unit:         'metric',   // 'metric' (°C) | 'imperial' (°F)
+  lastData:     null,       // Last successful API response (for unit toggle re-render)
+  isFetching:   false,      // Guard against duplicate requests
+};
 
+/* ── DOM References ─────────────────────────────────────────────── */
+const el = {
+  cityInput:       document.getElementById('cityInput'),
+  searchBtn:       document.getElementById('searchBtn'),
+  locationBtn:     document.getElementById('locationBtn'),
+  btnCelsius:      document.getElementById('btnCelsius'),
+  btnFahrenheit:   document.getElementById('btnFahrenheit'),
 
-// ── Event Listeners ───────────────────────────────────────────────
-searchBtn.addEventListener('click', handleSearch);
+  weatherCard:     document.getElementById('weatherCard'),
+  skeletonLoader:  document.getElementById('skeletonLoader'),
+  weatherContent:  document.getElementById('weatherContent'),
 
-cityInput.addEventListener('keydown', function (event) {
-  if (event.key === 'Enter') {
-    handleSearch();
-  }
-});
+  errorCard:       document.getElementById('errorCard'),
+  errorIcon:       document.getElementById('errorIcon'),
+  errorTitle:      document.getElementById('errorTitle'),
+  errorMessage:    document.getElementById('errorMessage'),
 
+  cityName:        document.getElementById('cityName'),
+  weatherDate:     document.getElementById('weatherDate'),
+  countryName:     document.getElementById('countryName'),
+  favBtn:          document.getElementById('favBtn'),
+  weatherIcon:     document.getElementById('weatherIcon'),
+  temperature:     document.getElementById('temperature'),
+  weatherDescription: document.getElementById('weatherDescription'),
+  humidity:        document.getElementById('humidity'),
+  windSpeed:       document.getElementById('windSpeed'),
+  feelsLike:       document.getElementById('feelsLike'),
+  visibility:      document.getElementById('visibility'),
+  pressure:        document.getElementById('pressure'),
+  windDirection:   document.getElementById('windDirection'),
+  sunrise:         document.getElementById('sunrise'),
+  sunset:          document.getElementById('sunset'),
 
-// ── Main Handler ──────────────────────────────────────────────────
+  recentSection:   document.getElementById('recentSection'),
+  recentList:      document.getElementById('recentList'),
+  clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+
+  favSection:      document.getElementById('favSection'),
+  favList:         document.getElementById('favList'),
+};
+
+/* ── Theme Map ──────────────────────────────────────────────────── */
+const THEME_MAP = [
+  { range: [200, 299], theme: 'theme-stormy'  },
+  { range: [300, 399], theme: 'theme-rainy'   },
+  { range: [500, 599], theme: 'theme-rainy'   },
+  { range: [600, 699], theme: 'theme-snowy'   },
+  { range: [700, 781], theme: 'theme-haze'    },
+  { range: [800, 800], theme: 'theme-sunny'   },
+  { range: [801, 804], theme: 'theme-cloudy'  },
+];
+
+const ALL_THEMES = THEME_MAP.map(t => t.theme).concat(['theme-night']);
+
+/* ── Wind Direction Helper ──────────────────────────────────────── */
+const WIND_DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+
+function degreesToDirection(deg) {
+  return WIND_DIRS[Math.round(deg / 22.5) % 16];
+}
+
+/* ── Time Formatter ─────────────────────────────────────────────── */
+function formatTime(unixTimestamp, timezoneOffsetSec) {
+  // Convert UTC unix timestamp to local city time
+  const utcMs       = unixTimestamp * 1000;
+  const offsetMs    = timezoneOffsetSec * 1000;
+  const localDate   = new Date(utcMs + offsetMs);
+  const hours       = localDate.getUTCHours();
+  const minutes     = String(localDate.getUTCMinutes()).padStart(2, '0');
+  const ampm        = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
+}
+
+function formatDate(unixTimestamp, timezoneOffsetSec) {
+  const localDate = new Date((unixTimestamp + timezoneOffsetSec) * 1000);
+  return localDate.toLocaleDateString('en-US', {
+    weekday: 'long', month: 'short', day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+/* ── Temperature Converter ──────────────────────────────────────── */
+function convertTemp(celsius) {
+  if (state.unit === 'imperial') return Math.round((celsius * 9 / 5) + 32);
+  return Math.round(celsius);
+}
+
+function unitSymbol() {
+  return state.unit === 'imperial' ? '°F' : '°C';
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────────────────────────── */
+function init() {
+  // Restore saved unit preference
+  const savedUnit = localStorage.getItem(CONFIG.STORAGE_KEYS.UNIT);
+  if (savedUnit === 'imperial') setUnit('imperial', false);
+
+  renderRecent();
+  renderFavs();
+  bindEvents();
+}
+
+/* ── Event Binding ──────────────────────────────────────────────── */
+function bindEvents() {
+  el.searchBtn.addEventListener('click', handleSearch);
+
+  el.cityInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleSearch();
+  });
+
+  el.locationBtn.addEventListener('click', handleLocation);
+
+  el.btnCelsius.addEventListener('click',    () => setUnit('metric'));
+  el.btnFahrenheit.addEventListener('click', () => setUnit('imperial'));
+
+  el.clearHistoryBtn.addEventListener('click', clearHistory);
+
+  el.favBtn.addEventListener('click', toggleFavourite);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SEARCH & FETCH
+───────────────────────────────────────────────────────────────── */
 function handleSearch() {
-  const cityName = cityInput.value.trim();
+  const city = el.cityInput.value.trim();
+  if (!city) {
+    showError('empty', '');
+    return;
+  }
+  fetchWeatherByCity(city);
+}
 
-  if (cityName === '') {
-    showError('Please enter a city name.');
+function handleLocation() {
+  if (!navigator.geolocation) {
+    showError('location', '');
     return;
   }
 
-  fetchWeather(cityName);
+  el.locationBtn.disabled = true;
+  showSkeleton();
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      fetchWeatherByCoords(lat, lon);
+      el.locationBtn.disabled = false;
+    },
+    err => {
+      el.locationBtn.disabled = false;
+      const msg = err.code === 1
+        ? 'Location access denied. Please enable location permissions.'
+        : 'Unable to retrieve your location. Try searching manually.';
+      showError('location', msg);
+    },
+    { timeout: 10000 }
+  );
 }
 
+async function fetchWeatherByCity(city) {
+  const url = `${CONFIG.BASE_URL}?q=${encodeURIComponent(city)}&appid=${CONFIG.API_KEY}&units=metric`;
+  await fetchWeather(url, city);
+}
 
-// ── API Fetch ─────────────────────────────────────────────────────
-async function fetchWeather(city) {
-  showLoading(); // Show spinner, disable button
+async function fetchWeatherByCoords(lat, lon) {
+  const url = `${CONFIG.BASE_URL}?lat=${lat}&lon=${lon}&appid=${CONFIG.API_KEY}&units=metric`;
+  await fetchWeather(url, null);
+}
 
-  const url = `${BASE_URL}?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=${UNITS}`;
+async function fetchWeather(url, cityQuery) {
+  // Guard: prevent duplicate requests
+  if (state.isFetching) return;
+  state.isFetching = true;
+
+  showSkeleton();
+
+  // AbortController lets us cancel the fetch if it takes too long
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), CONFIG.TIMEOUT_MS);
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
-      if (response.status === 404) {
-        showError(`City "${city}" not found. Check the spelling and try again.`);
-      } else if (response.status === 401) {
-        showError('Invalid API key. Please check your configuration.');
-      } else {
-        showError(`Something went wrong. Status: ${response.status}`);
-      }
+      handleHttpError(response.status, cityQuery);
       return;
     }
 
     const data = await response.json();
+    state.lastData = data;
+
     displayWeather(data);
 
-  } catch (error) {
-    console.error('Network error:', error);
-    showError('Network error. Please check your internet connection.');
+    if (cityQuery) saveRecentSearch(data.name);
+    el.cityInput.value = '';
+
+  } catch (err) {
+    clearTimeout(timeoutId);
+
+    if (err.name === 'AbortError') {
+      showError('timeout', '');
+    } else {
+      showError('network', '');
+    }
+    console.error('[Naveen Weather]', err);
+
   } finally {
-    /*
-      "finally" runs whether the try succeeded OR the catch ran.
-      We always want to re-enable the search button after the request completes.
-      Without finally, a failed request would leave the button permanently disabled.
-    */
-    searchBtn.disabled = false;
+    state.isFetching = false;
   }
 }
 
+/* ── HTTP Error Handler ─────────────────────────────────────────── */
+function handleHttpError(status, city) {
+  switch (status) {
+    case 404:
+      showError('notfound', city || 'this location');
+      break;
+    case 401:
+      showError('auth', '');
+      break;
+    case 429:
+      showError('ratelimit', '');
+      break;
+    default:
+      showError('server', String(status));
+  }
+}
 
-// ── Display Weather ───────────────────────────────────────────────
-/**
- * displayWeather(data)
- * Populates the card with real weather data and applies the theme.
- */
+/* ─────────────────────────────────────────────────────────────────
+   DISPLAY
+───────────────────────────────────────────────────────────────── */
 function displayWeather(data) {
   const {
     name,
-    sys:     { country },
-    main:    { temp, feels_like, humidity },
+    sys:     { country, sunrise: sunriseUnix, sunset: sunsetUnix },
+    main:    { temp, feels_like, humidity, pressure },
     weather: [{ description, icon, id: conditionId }],
-    /*
-      "id: conditionId" — we rename "id" to "conditionId" to be more descriptive.
-      The weather condition ID (e.g., 800 = clear sky) determines the theme.
-    */
-    wind:    { speed }
+    wind:    { speed, deg: windDeg = 0 },
+    visibility: visibilityM = null,
+    timezone,
+    dt,
   } = data;
 
-  // Update card text content
-  cityNameEl.textContent    = name;
-  countryNameEl.textContent = country;
-  temperatureEl.textContent = `${Math.round(temp)}°C`;
-  descriptionEl.textContent = description;
-  humidityEl.textContent    = `${humidity}%`;
-  feelsLikeEl.textContent   = `${Math.round(feels_like)}°C`;
+  // Populate text fields
+  el.cityName.textContent          = name;
+  el.countryName.textContent       = country;
+  el.weatherDate.textContent       = formatDate(dt, timezone);
+  el.temperature.textContent       = `${convertTemp(temp)}${unitSymbol()}`;
+  el.weatherDescription.textContent = description;
+  el.humidity.textContent          = `${humidity}%`;
+  el.feelsLike.textContent         = `${convertTemp(feels_like)}${unitSymbol()}`;
+  el.pressure.textContent          = `${pressure} hPa`;
+  el.windDirection.textContent     = degreesToDirection(windDeg);
+  el.sunrise.textContent           = formatTime(sunriseUnix, timezone);
+  el.sunset.textContent            = formatTime(sunsetUnix, timezone);
 
-  const windKmh             = Math.round(speed * 3.6);
-  windSpeedEl.textContent   = `${windKmh} km/h`;
+  // Wind speed: API returns m/s. Convert based on unit.
+  const windDisplay = state.unit === 'imperial'
+    ? `${Math.round(speed * 2.237)} mph`
+    : `${Math.round(speed * 3.6)} km/h`;
+  el.windSpeed.textContent = windDisplay;
 
-  // Update weather icon
-  weatherIconEl.src = `https://openweathermap.org/img/wn/${icon}@2x.png`;
-  weatherIconEl.alt = description;
+  // Visibility: API returns metres, show in km
+  el.visibility.textContent = visibilityM !== null
+    ? `${(visibilityM / 1000).toFixed(1)} km`
+    : '--';
 
-  // Apply dynamic theme based on weather condition
-  applyWeatherTheme(conditionId, icon);
+  // Weather icon
+  el.weatherIcon.src = `https://openweathermap.org/img/wn/${icon}@2x.png`;
+  el.weatherIcon.alt = description;
 
-  // Transition: hide spinner, show content
+  // Favourite button state
+  updateFavBtn(name);
+
+  // Apply dynamic background theme
+  applyTheme(conditionId, icon);
+
+  // Show content, hide skeleton
+  hideSkeleton();
   hideError();
-  loadingSpinner.classList.add('hidden');
-  weatherContent.classList.remove('hidden');
-
-  cityInput.value = '';
+  el.weatherCard.classList.remove('hidden');
+  el.weatherContent.classList.remove('hidden');
 }
 
+/* ── Unit Toggle ────────────────────────────────────────────────── */
+function setUnit(unit, rerender = true) {
+  if (state.unit === unit) return;
+  state.unit = unit;
 
-// ── Theme Engine ──────────────────────────────────────────────────
-/**
- * applyWeatherTheme(conditionId, icon)
- *
- * Reads the weather condition ID and the icon code,
- * determines the right theme, then swaps the class on <body>.
- *
- * @param {number} conditionId - OpenWeatherMap condition ID (e.g. 800)
- * @param {string} icon        - Icon code like "01d" or "01n"
- */
-function applyWeatherTheme(conditionId, icon) {
-  // Check if it's nighttime — icon codes ending in 'n' = night
+  localStorage.setItem(CONFIG.STORAGE_KEYS.UNIT, unit);
+
+  el.btnCelsius.classList.toggle('active',    unit === 'metric');
+  el.btnFahrenheit.classList.toggle('active', unit === 'imperial');
+  el.btnCelsius.setAttribute('aria-pressed',    String(unit === 'metric'));
+  el.btnFahrenheit.setAttribute('aria-pressed', String(unit === 'imperial'));
+
+  // Re-render with same data if available
+  if (rerender && state.lastData) displayWeather(state.lastData);
+}
+
+/* ── Theme Engine ───────────────────────────────────────────────── */
+function applyTheme(conditionId, icon) {
   const isNight = icon.endsWith('n');
 
-  let themeName;
+  let theme = 'theme-cloudy'; // default fallback
 
   if (isNight) {
-    themeName = WEATHER_THEMES.night;
-  } else if (conditionId >= 200 && conditionId < 300) {
-    themeName = WEATHER_THEMES.thunderstorm;
-  } else if (conditionId >= 300 && conditionId < 400) {
-    themeName = WEATHER_THEMES.drizzle;
-  } else if (conditionId >= 500 && conditionId < 600) {
-    themeName = WEATHER_THEMES.rain;
-  } else if (conditionId >= 600 && conditionId < 700) {
-    themeName = WEATHER_THEMES.snow;
-  } else if (conditionId >= 700 && conditionId < 800) {
-    themeName = WEATHER_THEMES.atmosphere;
-  } else if (conditionId === 800) {
-    themeName = WEATHER_THEMES.clear;
+    theme = 'theme-night';
   } else {
-    themeName = WEATHER_THEMES.clouds; // 801–804
+    const match = THEME_MAP.find(
+      t => conditionId >= t.range[0] && conditionId <= t.range[1]
+    );
+    if (match) theme = match.theme;
   }
 
-  // Remove ALL existing theme classes from body first
-  // Then add only the new one
-  // This prevents themes from stacking on top of each other
-  document.body.classList.remove(...ALL_THEME_CLASSES);
-  /*
-    Spread operator (...) expands the array into individual arguments.
-    classList.remove('theme-sunny', 'theme-rainy', 'theme-cloudy', ...)
-    is the same as classList.remove(...ALL_THEME_CLASSES)
-  */
-  document.body.classList.add(themeName);
+  document.body.classList.remove(...ALL_THEMES);
+  document.body.classList.add(theme);
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   ERROR DISPLAY
+───────────────────────────────────────────────────────────────── */
+const ERROR_CONFIGS = {
+  empty: {
+    icon: '🔍',
+    title: 'Enter a city name',
+    message: 'Type a city name in the search box and press Search.',
+  },
+  notfound: {
+    icon: '🗺️',
+    title: 'City not found',
+    message: (city) => `"${city}" could not be found. Check the spelling and try again.`,
+  },
+  auth: {
+    icon: '🔑',
+    title: 'API key error',
+    message: 'The weather service key is invalid. Please check configuration.',
+  },
+  ratelimit: {
+    icon: '⏱️',
+    title: 'Too many requests',
+    message: 'Request limit reached. Please wait a moment and try again.',
+  },
+  timeout: {
+    icon: '⏳',
+    title: 'Request timed out',
+    message: 'The weather service took too long to respond. Check your connection.',
+  },
+  network: {
+    icon: '📡',
+    title: 'Network error',
+    message: 'No internet connection detected. Please check your network.',
+  },
+  server: {
+    icon: '🛠️',
+    title: 'Server error',
+    message: (code) => `The weather service returned an error (${code}). Try again shortly.`,
+  },
+  location: {
+    icon: '📍',
+    title: 'Location unavailable',
+    message: (msg) => msg || 'Unable to access your location.',
+  },
+};
 
-// ── UI State Helpers ──────────────────────────────────────────────
+function showError(type, detail) {
+  const cfg = ERROR_CONFIGS[type] || ERROR_CONFIGS.server;
 
-/**
- * showLoading()
- * Prepares the UI for a pending API request:
- * - Shows the weather card with spinner
- * - Hides weather content
- * - Disables the search button to prevent spam clicks
- */
-function showLoading() {
-  hideError();
+  el.errorIcon.textContent  = cfg.icon;
+  el.errorTitle.textContent = cfg.title;
+  el.errorMessage.textContent = typeof cfg.message === 'function'
+    ? cfg.message(detail)
+    : cfg.message;
 
-  // Show card shell with spinner visible, content hidden
-  weatherCard.classList.remove('hidden');
-  loadingSpinner.classList.remove('hidden');
-  weatherContent.classList.add('hidden');
-
-  // Disable the search button while request is in flight
-  searchBtn.disabled = true;
-  /*
-    Why disable the button? If the user clicks 5 times quickly,
-    5 API requests fire in parallel. The results arrive out of order
-    and the UI flickers. Disabling prevents this "race condition."
-  */
+  el.errorCard.classList.remove('hidden');
+  el.weatherCard.classList.add('hidden');
+  el.searchBtn.disabled    = false;
+  el.locationBtn.disabled  = false;
 }
 
-/**
- * showError(message)
- * Displays an error message and fully hides the weather card.
- */
-function showError(message) {
-  errorMessage.textContent = message;
-  errorMessage.classList.remove('hidden');
-  weatherCard.classList.add('hidden');
-  searchBtn.disabled = false;
-}
-
-/**
- * hideError()
- * Hides the error message banner.
- */
 function hideError() {
-  errorMessage.classList.add('hidden');
+  el.errorCard.classList.add('hidden');
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   SKELETON LOADER
+───────────────────────────────────────────────────────────────── */
+function showSkeleton() {
+  hideError();
+  el.weatherCard.classList.remove('hidden');
+  el.skeletonLoader.classList.remove('hidden');
+  el.weatherContent.classList.add('hidden');
+  el.searchBtn.disabled   = true;
+  el.locationBtn.disabled = true;
+}
+
+function hideSkeleton() {
+  el.skeletonLoader.classList.add('hidden');
+  el.searchBtn.disabled   = false;
+  el.locationBtn.disabled = false;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   RECENT SEARCHES  (localStorage)
+───────────────────────────────────────────────────────────────── */
+function getRecent() {
+  try {
+    return JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.RECENT)) || [];
+  } catch { return []; }
+}
+
+function saveRecentSearch(city) {
+  let recent = getRecent().filter(c => c.toLowerCase() !== city.toLowerCase());
+  recent.unshift(city);                        // add to front
+  recent = recent.slice(0, CONFIG.MAX_RECENT); // keep max 5
+  localStorage.setItem(CONFIG.STORAGE_KEYS.RECENT, JSON.stringify(recent));
+  renderRecent();
+}
+
+function clearHistory() {
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.RECENT);
+  renderRecent();
+}
+
+function renderRecent() {
+  const recent = getRecent();
+  if (recent.length === 0) {
+    el.recentSection.classList.add('hidden');
+    return;
+  }
+
+  el.recentSection.classList.remove('hidden');
+  el.recentList.innerHTML = '';
+
+  recent.forEach(city => {
+    const chip = document.createElement('button');
+    chip.className   = 'recent-chip';
+    chip.setAttribute('role', 'listitem');
+    chip.setAttribute('aria-label', `Search ${city}`);
+    chip.textContent = city;
+    chip.addEventListener('click', () => fetchWeatherByCity(city));
+    el.recentList.appendChild(chip);
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   FAVOURITE CITIES  (localStorage)
+───────────────────────────────────────────────────────────────── */
+function getFavs() {
+  try {
+    return JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.FAVS)) || [];
+  } catch { return []; }
+}
+
+function toggleFavourite() {
+  if (!state.lastData) return;
+
+  const city = state.lastData.name;
+  let favs   = getFavs();
+  const idx  = favs.findIndex(c => c.toLowerCase() === city.toLowerCase());
+
+  if (idx === -1) {
+    if (favs.length >= CONFIG.MAX_FAVS) {
+      // Remove oldest favourite to make room
+      favs.pop();
+    }
+    favs.unshift(city);
+    el.favBtn.classList.add('is-favourite');
+    el.favBtn.setAttribute('aria-label', `Remove ${city} from favourites`);
+    el.favBtn.textContent = '★';
+  } else {
+    favs.splice(idx, 1);
+    el.favBtn.classList.remove('is-favourite');
+    el.favBtn.setAttribute('aria-label', `Add ${city} to favourites`);
+    el.favBtn.textContent = '☆';
+  }
+
+  localStorage.setItem(CONFIG.STORAGE_KEYS.FAVS, JSON.stringify(favs));
+  renderFavs();
+}
+
+function updateFavBtn(city) {
+  const isFav = getFavs().some(c => c.toLowerCase() === city.toLowerCase());
+  el.favBtn.classList.toggle('is-favourite', isFav);
+  el.favBtn.textContent = isFav ? '★' : '☆';
+  el.favBtn.setAttribute('aria-label',
+    isFav ? `Remove ${city} from favourites` : `Add ${city} to favourites`
+  );
+}
+
+function renderFavs() {
+  const favs = getFavs();
+  if (favs.length === 0) {
+    el.favSection.classList.add('hidden');
+    return;
+  }
+
+  el.favSection.classList.remove('hidden');
+  el.favList.innerHTML = '';
+
+  favs.forEach(city => {
+    const chip = document.createElement('button');
+    chip.className   = 'fav-chip';
+    chip.setAttribute('role', 'listitem');
+    chip.setAttribute('aria-label', `Search weather for ${city}`);
+    chip.innerHTML   = `⭐ ${city}`;
+    chip.addEventListener('click', () => fetchWeatherByCity(city));
+    el.favList.appendChild(chip);
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   START
+───────────────────────────────────────────────────────────────── */
+init();

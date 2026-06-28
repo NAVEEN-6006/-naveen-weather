@@ -1,212 +1,240 @@
 <!DOCTYPE html>
-<!--
-  DOCTYPE tells the browser: "This is a modern HTML5 page."
-  Without this, browsers go into "quirks mode" and render things incorrectly.
--->
-
 <html lang="en">
-<!--
-  lang="en" tells search engines and screen readers this page is in English.
-  Important for SEO and accessibility.
--->
 
 <head>
-  <!-- ── Meta Tags ─────────────────────────────────────────────── -->
-
   <meta charset="UTF-8" />
-  <!-- UTF-8 supports all characters worldwide (emojis, Hindi, Arabic, etc.) -->
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!--
-    This is the KEY line for mobile responsiveness.
-    "width=device-width" → use the actual screen width, not a fake 980px desktop width
-    "initial-scale=1.0"  → don't zoom in or out on load
-    Without this, your site would look tiny on a phone.
-  -->
 
-  <meta name="description" content="Naveen Weather — Search real-time weather for any city in the world. Get temperature, humidity, wind speed and more." />
-  <!-- This description appears in Google search results. Keep it under 160 characters. -->
+  <!-- ── SEO ──────────────────────────────────────────────────── -->
+  <title>Naveen Weather — Real-Time Weather for Any City</title>
+  <meta name="description" content="Get real-time weather for any city worldwide. Temperature, humidity, wind speed, sunrise, sunset, UV index and more. Fast, accurate, beautiful." />
+  <meta name="keywords" content="weather, forecast, temperature, humidity, wind, rain, sunny, Naveen Weather" />
+  <meta name="author" content="Naveen" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://naveen-weather.vercel.app/" />
 
-  <!-- ── SEO: Open Graph Tags ──────────────────────────────────────
-    Open Graph tags control how your page looks when shared on
-    WhatsApp, Twitter, LinkedIn, Facebook, etc.
-    Without these, shared links show blank previews.
-  -->
-  <meta property="og:title"       content="Naveen Weather" />
-  <meta property="og:description" content="Real-time weather for any city in the world." />
+  <!-- ── Open Graph (WhatsApp, Facebook, LinkedIn previews) ──── -->
   <meta property="og:type"        content="website" />
-  <meta property="og:url"         content="https://naveen-weather.vercel.app" />
-  <!-- og:image → the thumbnail shown in link previews (add an image later) -->
+  <meta property="og:url"         content="https://naveen-weather.vercel.app/" />
+  <meta property="og:title"       content="Naveen Weather — Real-Time Weather for Any City" />
+  <meta property="og:description" content="Search real-time weather for any city. Temperature, humidity, wind, sunrise, sunset and more." />
+  <meta property="og:image"       content="https://naveen-weather.vercel.app/assets/og-image.png" />
 
-  <!-- ── SEO: Twitter Card ────────────────────────────────────────-->
-  <meta name="twitter:card"        content="summary" />
-  <meta name="twitter:title"       content="Naveen Weather" />
-  <meta name="twitter:description" content="Real-time weather for any city in the world." />
+  <!-- ── Twitter Card ─────────────────────────────────────────── -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Naveen Weather — Real-Time Weather for Any City" />
+  <meta name="twitter:description" content="Search real-time weather for any city worldwide." />
+  <meta name="twitter:image"       content="https://naveen-weather.vercel.app/assets/og-image.png" />
 
-  <!-- ── SEO: Canonical URL ───────────────────────────────────────
-    Tells Google: "THIS is the official URL of this page."
-    Prevents duplicate content penalties if the site is accessible
-    from multiple URLs (e.g., with/without www).
-  -->
-  <link rel="canonical" href="https://naveen-weather.vercel.app" />
-
-  <!-- ── Favicon ──────────────────────────────────────────────────
-    The small icon shown in the browser tab.
-    Using an emoji as a data URI — no image file needed.
-  -->
+  <!-- ── Favicon ──────────────────────────────────────────────── -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>" />
 
-  <title>Naveen Weather</title>
-  <!-- Shown in browser tab and in Google search results -->
-
-  <!-- ── Google Font ────────────────────────────────────────────── -->
+  <!-- ── Fonts ────────────────────────────────────────────────── -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <!--
-    We're using the "Poppins" font — modern, clean, used by many pro websites.
-    preconnect hints to the browser: "start connecting to Google Fonts early"
-    This improves page load speed.
-  -->
 
-  <!-- ── Our Stylesheet ─────────────────────────────────────────── -->
+  <!-- ── Stylesheet ───────────────────────────────────────────── -->
   <link rel="stylesheet" href="css/style.css" />
-  <!-- Links our CSS file. Path is relative to index.html location. -->
-
 </head>
 
 <body>
 
-  <!-- ── Page Wrapper ───────────────────────────────────────────── -->
-  <!-- Everything lives inside this div so we can center the whole page -->
-  <div class="app-wrapper">
+  <div class="app-wrapper" role="main">
 
-    <!-- ── Header ─────────────────────────────────────────────────── -->
+    <!-- ── Header ──────────────────────────────────────────────── -->
     <header class="app-header">
-      <h1 class="app-title">🌤️ Naveen Weather</h1>
-      <p class="app-subtitle">Real-time weather for any city in the world</p>
+      <div class="header-top">
+        <div>
+          <h1 class="app-title">🌤️ Naveen Weather</h1>
+          <p class="app-subtitle">Real-time weather for any city in the world</p>
+        </div>
+        <!-- Unit Toggle -->
+        <div class="unit-toggle" role="group" aria-label="Temperature unit">
+          <button id="btnCelsius"   class="unit-btn active" aria-pressed="true"  title="Switch to Celsius">°C</button>
+          <button id="btnFahrenheit" class="unit-btn"       aria-pressed="false" title="Switch to Fahrenheit">°F</button>
+        </div>
+      </div>
     </header>
 
-    <!-- ── Search Section ─────────────────────────────────────────── -->
-    <section class="search-section">
-      <div class="search-bar">
-
+    <!-- ── Search ──────────────────────────────────────────────── -->
+    <section class="search-section" aria-label="City search">
+      <div class="search-bar" role="search">
+        <label for="cityInput" class="sr-only">Enter city name</label>
         <input
-          type="text"
+          type="search"
           id="cityInput"
           class="search-input"
           placeholder="Search for a city..."
           autocomplete="off"
+          autocorrect="off"
+          autocapitalize="words"
+          spellcheck="false"
+          aria-label="City name"
+          maxlength="100"
         />
-        <!--
-          id="cityInput"   → JavaScript will grab this element by this ID
-          autocomplete="off" → Prevents the browser from showing old suggestions
-                               which can look messy on a weather app
-        -->
-
-        <button id="searchBtn" class="search-btn" aria-label="Search weather">
-          🔍
+        <button id="searchBtn" class="search-btn" aria-label="Search weather for entered city">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+            aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
         </button>
-        <!--
-          aria-label → For screen readers (accessibility). If someone uses
-          a screen reader, it will say "Search weather" instead of just "emoji"
-        -->
-
       </div>
+
+      <!-- Current Location Button -->
+      <button id="locationBtn" class="location-btn" aria-label="Use my current location">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/>
+        </svg>
+        Use my location
+      </button>
     </section>
 
-    <!-- ── Error Message ──────────────────────────────────────────── -->
-    <!-- Hidden by default. JavaScript will show it when city is not found. -->
-    <p id="errorMessage" class="error-message hidden">
-      ⚠️ City not found. Please check the name and try again.
-    </p>
+    <!-- ── Recent Searches ─────────────────────────────────────── -->
+    <section id="recentSection" class="recent-section hidden" aria-label="Recent searches">
+      <div class="recent-header">
+        <span class="recent-title">Recent</span>
+        <button id="clearHistoryBtn" class="clear-btn" aria-label="Clear search history">Clear</button>
+      </div>
+      <div id="recentList" class="recent-list" role="list"></div>
+    </section>
 
-    <!-- ── Weather Card ───────────────────────────────────────────── -->
-    <!--
-      Hidden on page load. JavaScript removes "hidden" class after:
-      a) fetching weather data (shows weather content), or
-      b) while fetching (shows the loading spinner).
-    -->
-    <section id="weatherCard" class="weather-card hidden">
+    <!-- ── Error Card ───────────────────────────────────────────── -->
+    <div id="errorCard" class="error-card hidden" role="alert" aria-live="assertive">
+      <span id="errorIcon"    class="error-card__icon">⚠️</span>
+      <p    id="errorTitle"   class="error-card__title">Something went wrong</p>
+      <p    id="errorMessage" class="error-card__message">Please try again.</p>
+    </div>
 
-      <!-- Loading Spinner — visible while API request is in flight -->
-      <div id="loadingSpinner" class="loading-spinner-wrapper hidden">
-        <div class="loading-spinner"></div>
-        <p class="loading-text">Fetching weather data...</p>
+    <!-- ── Weather Card ─────────────────────────────────────────── -->
+    <section id="weatherCard" class="weather-card hidden" aria-label="Weather information" aria-live="polite">
+
+      <!-- Skeleton Loader (shown while fetching) -->
+      <div id="skeletonLoader" class="skeleton-wrapper hidden" aria-hidden="true">
+        <div class="skeleton skeleton-location"></div>
+        <div class="skeleton skeleton-temp"></div>
+        <div class="skeleton skeleton-desc"></div>
+        <div class="skeleton-details">
+          <div class="skeleton skeleton-detail"></div>
+          <div class="skeleton skeleton-detail"></div>
+          <div class="skeleton skeleton-detail"></div>
+        </div>
       </div>
 
-      <!-- Actual Weather Content — hidden while loading, shown after data arrives -->
+      <!-- Weather Content -->
       <div id="weatherContent" class="weather-content hidden">
 
-        <!-- City name and country -->
+        <!-- Location -->
         <div class="weather-location">
-          <h2 id="cityName" class="city-name">--</h2>
-          <span id="countryName" class="country-name">--</span>
+          <div class="location-text">
+            <h2 id="cityName" class="city-name">--</h2>
+            <p id="weatherDate" class="weather-date">--</p>
+          </div>
+          <div class="location-right">
+            <span id="countryName" class="country-badge">--</span>
+            <button id="favBtn" class="fav-btn" aria-label="Add to favourites" title="Add to favourites">☆</button>
+          </div>
         </div>
 
-        <!-- Weather icon and temperature — the hero of the card -->
+        <!-- Main: Icon + Temp -->
         <div class="weather-main">
-          <img
-            id="weatherIcon"
-            class="weather-icon"
-            src=""
-            alt="Weather icon"
-          />
-
+          <img id="weatherIcon" class="weather-icon" src="" alt="" width="90" height="90" loading="lazy" />
           <div class="temperature-block">
-            <p id="temperature" class="temperature">--°C</p>
+            <p id="temperature" class="temperature">--°</p>
             <p id="weatherDescription" class="weather-description">--</p>
           </div>
         </div>
 
-        <!-- Extra weather details row -->
-        <div class="weather-details">
+        <!-- Stats Grid -->
+        <div class="stats-grid" role="list">
 
-          <div class="detail-item">
-            <span class="detail-icon">💧</span>
-            <div>
-              <p class="detail-label">Humidity</p>
-              <p id="humidity" class="detail-value">--%</p>
+          <div class="stat-item" role="listitem">
+            <span class="stat-icon" aria-hidden="true">💧</span>
+            <div class="stat-text">
+              <p class="stat-label">Humidity</p>
+              <p id="humidity" class="stat-value">--</p>
             </div>
           </div>
 
-          <div class="detail-item">
-            <span class="detail-icon">💨</span>
-            <div>
-              <p class="detail-label">Wind Speed</p>
-              <p id="windSpeed" class="detail-value">-- km/h</p>
+          <div class="stat-item" role="listitem">
+            <span class="stat-icon" aria-hidden="true">💨</span>
+            <div class="stat-text">
+              <p class="stat-label">Wind</p>
+              <p id="windSpeed" class="stat-value">--</p>
             </div>
           </div>
 
-          <div class="detail-item">
-            <span class="detail-icon">🌡️</span>
-            <div>
-              <p class="detail-label">Feels Like</p>
-              <p id="feelsLike" class="detail-value">--°C</p>
+          <div class="stat-item" role="listitem">
+            <span class="stat-icon" aria-hidden="true">🌡️</span>
+            <div class="stat-text">
+              <p class="stat-label">Feels Like</p>
+              <p id="feelsLike" class="stat-value">--</p>
+            </div>
+          </div>
+
+          <div class="stat-item" role="listitem">
+            <span class="stat-icon" aria-hidden="true">👁️</span>
+            <div class="stat-text">
+              <p class="stat-label">Visibility</p>
+              <p id="visibility" class="stat-value">--</p>
+            </div>
+          </div>
+
+          <div class="stat-item" role="listitem">
+            <span class="stat-icon" aria-hidden="true">🔽</span>
+            <div class="stat-text">
+              <p class="stat-label">Pressure</p>
+              <p id="pressure" class="stat-value">--</p>
+            </div>
+          </div>
+
+          <div class="stat-item" role="listitem">
+            <span class="stat-icon" aria-hidden="true">🧭</span>
+            <div class="stat-text">
+              <p class="stat-label">Wind Dir.</p>
+              <p id="windDirection" class="stat-value">--</p>
             </div>
           </div>
 
         </div>
-        <!-- end .weather-details -->
+
+        <!-- Sun Times -->
+        <div class="sun-row">
+          <div class="sun-item">
+            <span class="sun-icon" aria-hidden="true">🌅</span>
+            <div>
+              <p class="stat-label">Sunrise</p>
+              <p id="sunrise" class="stat-value">--</p>
+            </div>
+          </div>
+          <div class="sun-divider" aria-hidden="true"></div>
+          <div class="sun-item">
+            <span class="sun-icon" aria-hidden="true">🌇</span>
+            <div>
+              <p class="stat-label">Sunset</p>
+              <p id="sunset" class="stat-value">--</p>
+            </div>
+          </div>
+        </div>
 
       </div>
       <!-- end #weatherContent -->
-
     </section>
-    <!-- end .weather-card -->
+
+    <!-- ── Favourites ───────────────────────────────────────────── -->
+    <section id="favSection" class="fav-section hidden" aria-label="Favourite cities">
+      <div class="recent-header">
+        <span class="recent-title">⭐ Favourites</span>
+      </div>
+      <div id="favList" class="recent-list" role="list"></div>
+    </section>
 
   </div>
   <!-- end .app-wrapper -->
 
-  <!-- ── JavaScript ─────────────────────────────────────────────── -->
   <script src="js/app.js"></script>
-  <!--
-    Script tag goes at the BOTTOM of body — not in <head>.
-    Why? Because the browser reads HTML top to bottom.
-    If script is in <head>, JS runs before the HTML elements exist,
-    and document.getElementById("cityInput") would return null.
-    Placing it at the bottom ensures all HTML is loaded first.
-  -->
-
 </body>
 </html>

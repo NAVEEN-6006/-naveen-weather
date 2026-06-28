@@ -1,19 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  sitemap.xml — tells Google all the pages that exist on your site.
-  For a single-page app like ours, there's only one URL.
-  Submit this file URL to Google Search Console to speed up indexing.
-  
-  Format: https://naveen-weather.vercel.app/sitemap.xml
--->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://naveen-weather.vercel.app/</loc>
-    <!-- lastmod = when this page was last changed. Update when you redeploy. -->
-    <lastmod>2026-06-27</lastmod>
-    <!-- changefreq = how often Google should re-crawl this page -->
+    <lastmod>2026-06-28</lastmod>
     <changefreq>monthly</changefreq>
-    <!-- priority = importance of this page (1.0 = highest) -->
     <priority>1.0</priority>
   </url>
 </urlset>
